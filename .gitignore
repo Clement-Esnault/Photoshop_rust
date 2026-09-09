@@ -1,0 +1,8 @@
+﻿node_modules/
+dist/
+target/
+pkg/
+frontend/src/wasm/
+*.log
+.vscode/*
+!.vscode/extensions.json
