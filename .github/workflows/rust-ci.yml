@@ -3,18 +3,18 @@ name: Rust CI
 on:
   pull_request:
     paths:
-      - 'editeur_rust/rust-core/**'
+      - 'rust-core/**'
   push:
     branches: [main]
     paths:
-      - 'editeur_rust/rust-core/**'
+      - 'rust-core/**'
 
 jobs:
   test:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: editeur_rust/rust-core
+        working-directory: rust-core
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
