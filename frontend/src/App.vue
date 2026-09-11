@@ -1,17 +1,59 @@
 <template>
-  <div class="p-8">
-    <h1 class="text-2xl font-bold mb-4">Éditeur d'images</h1>
-    <input type="file" accept="image/*" @change="onFileChange" />
-    <canvas ref="canvasRef" class="mt-4 border"></canvas>
+  <div class="max-w-2xl mx-auto p-8 space-y-6">
+    <h1 class="text-2xl font-bold">Éditeur d'images</h1>
+
+    <ImageCanvas ref="imageCanvasRef" />
+
+    <FilterControls @apply-filter="onApplyFilter" @reset="onReset" @benchmark="onBenchmark" />
+
+    <p v-if="benchmarkResult" class="text-sm text-gray-600">
+      JS : {{ benchmarkResult.js.toFixed(2) }} ms —
+      Rust/WASM : {{ benchmarkResult.rust.toFixed(2) }} ms
+    </p>
   </div>
 </template>
 
-<script setup>
-import { onMounted } from 'vue'
-import init, { add } from './wasm/rust_core.js'
+<script setup lang="ts">
+import { ref } from 'vue'
+import ImageCanvas from './components/ImageCanvas.vue'
+import FilterControls from './components/FilterControls.vue'
+import { useWasm } from './composables/useWasm'
+import { grayscaleJs, measureTime } from './composables/useBenchmark'
 
-onMounted(async () => {
-  await init()
-  console.log(add(2, 3)) // doit afficher 5
-})
+const imageCanvasRef = ref<InstanceType<typeof ImageCanvas> | null>(null)
+const { grayscale, sepia } = useWasm()
+const benchmarkResult = ref<{ js: number; rust: number } | null>(null)
+
+function onApplyFilter(filter: 'grayscale' | 'sepia') {
+  const canvas = imageCanvasRef.value?.canvasRef
+  if (!canvas) return
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+  if (filter === 'grayscale') grayscale(imageData.data)
+  if (filter === 'sepia') sepia(imageData.data)
+
+  ctx.putImageData(imageData, 0, 0)
+}
+
+function onReset() {
+  imageCanvasRef.value?.reset()
+}
+
+function onBenchmark() {
+  const canvas = imageCanvasRef.value?.canvasRef
+  if (!canvas) return
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return
+
+  const dataForJs = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const dataForRust = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+  const jsTime = measureTime(() => grayscaleJs(dataForJs.data))
+  const rustTime = measureTime(() => grayscale(dataForRust.data))
+
+  benchmarkResult.value = { js: jsTime, rust: rustTime }
+}
 </script>
