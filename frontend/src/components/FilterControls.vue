@@ -24,6 +24,13 @@
     >
       Benchmark
     </button>
+
+    <button
+    @click="$emit('download')"
+    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
+    >
+    Télécharger
+    </button>
   </div>
 </template>
 
@@ -32,5 +39,6 @@ defineEmits<{
   'apply-filter': [filter: 'grayscale' | 'sepia']
   'reset': []
   'benchmark': []
+  'download': []
 }>()
 </script>

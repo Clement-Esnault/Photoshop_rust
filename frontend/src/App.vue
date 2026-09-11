@@ -4,8 +4,12 @@
 
     <ImageCanvas ref="imageCanvasRef" />
 
-    <FilterControls @apply-filter="onApplyFilter" @reset="onReset" @benchmark="onBenchmark" />
-
+    <FilterControls
+      @apply-filter="onApplyFilter"
+      @reset="onReset"
+      @benchmark="onBenchmark"
+      @download="onDownload"
+    />
     <p v-if="benchmarkResult" class="text-sm text-gray-600">
       JS : {{ benchmarkResult.js.toFixed(2) }} ms —
       Rust/WASM : {{ benchmarkResult.rust.toFixed(2) }} ms
@@ -19,6 +23,7 @@ import ImageCanvas from './components/ImageCanvas.vue'
 import FilterControls from './components/FilterControls.vue'
 import { useWasm } from './composables/useWasm'
 import { grayscaleJs, measureTime } from './composables/useBenchmark'
+import { downloadCanvas } from './composables/useImageExport'
 
 const imageCanvasRef = ref<InstanceType<typeof ImageCanvas> | null>(null)
 const { grayscale, sepia } = useWasm()
@@ -32,8 +37,8 @@ function onApplyFilter(filter: 'grayscale' | 'sepia') {
 
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
-  if (filter === 'grayscale') grayscale(imageData.data)
-  if (filter === 'sepia') sepia(imageData.data)
+  if (filter === 'grayscale') grayscale(imageData.data as unknown as Uint8Array)
+  if (filter === 'sepia') sepia(imageData.data as unknown as Uint8Array)
 
   ctx.putImageData(imageData, 0, 0)
 }
@@ -52,8 +57,14 @@ function onBenchmark() {
   const dataForRust = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
   const jsTime = measureTime(() => grayscaleJs(dataForJs.data))
-  const rustTime = measureTime(() => grayscale(dataForRust.data))
+  const rustTime = measureTime(() => grayscale(dataForRust.data as unknown as Uint8Array))
 
   benchmarkResult.value = { js: jsTime, rust: rustTime }
+}
+
+function onDownload() {
+  const canvas = imageCanvasRef.value?.canvasRef
+  if (!canvas) return
+  downloadCanvas(canvas)
 }
 </script>
