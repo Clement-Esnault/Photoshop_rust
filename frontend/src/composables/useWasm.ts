@@ -1,5 +1,12 @@
 import { ref } from 'vue'
-import init, { grayscale, sepia } from '../../src/wasm/rust_core.js'
+import init, {
+  grayscale,
+  grayscale_weighted,
+  sepia,
+  invert,
+  box_blur,
+  box_blur_fast,
+} from '../wasm/rust_core.js'
 
 const ready = ref(false)
 let initPromise: Promise<void> | null = null
@@ -14,6 +21,10 @@ export function useWasm() {
   return {
     ready,
     grayscale,
+    grayscale_weighted,
     sepia,
+    invert,
+    box_blur,
+    box_blur_fast,
   }
 }

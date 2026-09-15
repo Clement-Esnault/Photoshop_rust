@@ -6,10 +6,12 @@
 
     <FilterControls
       @apply-filter="onApplyFilter"
+      @apply-blur="onApplyBlur"
       @reset="onReset"
       @benchmark="onBenchmark"
       @download="onDownload"
     />
+
     <p v-if="benchmarkResult" class="text-sm text-gray-600">
       JS : {{ benchmarkResult.js.toFixed(2) }} ms —
       Rust/WASM : {{ benchmarkResult.rust.toFixed(2) }} ms
@@ -26,19 +28,37 @@ import { grayscaleJs, measureTime } from './composables/useBenchmark'
 import { downloadCanvas } from './composables/useImageExport'
 
 const imageCanvasRef = ref<InstanceType<typeof ImageCanvas> | null>(null)
-const { grayscale, sepia } = useWasm()
+const { grayscale, grayscale_weighted, sepia, invert, box_blur, box_blur_fast } = useWasm()
 const benchmarkResult = ref<{ js: number; rust: number } | null>(null)
 
-function onApplyFilter(filter: 'grayscale' | 'sepia') {
+function onApplyFilter(filter: 'grayscale' | 'grayscale_weighted' | 'sepia' | 'invert') {
   const canvas = imageCanvasRef.value?.canvasRef
   if (!canvas) return
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) return
 
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const pixels = imageData.data as unknown as Uint8Array
 
-  if (filter === 'grayscale') grayscale(imageData.data as unknown as Uint8Array)
-  if (filter === 'sepia') sepia(imageData.data as unknown as Uint8Array)
+  if (filter === 'grayscale') grayscale(pixels)
+  if (filter === 'grayscale_weighted') grayscale_weighted(pixels)
+  if (filter === 'sepia') sepia(pixels)
+  if (filter === 'invert') invert(pixels)
+
+  ctx.putImageData(imageData, 0, 0)
+}
+
+function onApplyBlur(radius: number, fast: boolean) {
+  const canvas = imageCanvasRef.value?.canvasRef
+  if (!canvas) return
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const pixels = imageData.data as unknown as Uint8Array
+
+  if (fast) box_blur_fast(pixels, canvas.width, canvas.height, radius)
+  else box_blur(pixels, canvas.width, canvas.height, radius)
 
   ctx.putImageData(imageData, 0, 0)
 }

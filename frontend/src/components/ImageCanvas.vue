@@ -28,6 +28,7 @@ function onFileChange(event: Event) {
   }
   img.src = URL.createObjectURL(file)
 }
+
 function drawImage(img: HTMLImageElement) {
   const canvas = canvasRef.value
   if (!canvas) return
