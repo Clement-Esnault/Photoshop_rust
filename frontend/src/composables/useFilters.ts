@@ -5,11 +5,20 @@ import { getImageData, putImageData, asPixels } from './useCanvasPixels'
 export type FilterName = 'grayscale' | 'grayscale_weighted' | 'sepia' | 'invert'
 
 export function useFilters() {
-  const { grayscale, grayscale_weighted, sepia, invert, box_blur, box_blur_fast } = useWasm()
+  const {
+    grayscale,
+    grayscale_weighted,
+    sepia,
+    invert,
+    box_blur,
+    box_blur_fast,
+    brightness,
+    contrast,
+  } = useWasm()
 
   // Garde en mémoire le dernier filtre appliqué, pour que l'UI puisse
   // le mettre en évidence (bouton surligné).
-  const activeFilter = ref<FilterName | 'blur' | null>(null)
+  const activeFilter = ref<FilterName | 'blur' | 'brightness' | 'contrast' | null>(null)
 
   function applyFilter(canvas: HTMLCanvasElement, filter: FilterName) {
     const imageData = getImageData(canvas)
@@ -37,9 +46,32 @@ export function useFilters() {
     activeFilter.value = 'blur'
   }
 
+  function applyBrightness(canvas: HTMLCanvasElement, amount: number) {
+    const imageData = getImageData(canvas)
+    if (!imageData) return
+    brightness(asPixels(imageData), amount)
+    putImageData(canvas, imageData)
+    activeFilter.value = 'brightness'
+  }
+
+  function applyContrast(canvas: HTMLCanvasElement, amount: number) {
+    const imageData = getImageData(canvas)
+    if (!imageData) return
+    contrast(asPixels(imageData), amount)
+    putImageData(canvas, imageData)
+    activeFilter.value = 'contrast'
+  }
+
   function clearActiveFilter() {
     activeFilter.value = null
   }
 
-  return { applyFilter, applyBlur, activeFilter, clearActiveFilter }
+  return {
+    applyFilter,
+    applyBlur,
+    applyBrightness,
+    applyContrast,
+    activeFilter,
+    clearActiveFilter,
+  }
 }

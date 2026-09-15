@@ -134,6 +134,33 @@ fn blur_pass(data: &[u8], width: i32, height: i32, radius: i32, horizontal: bool
     output
 }
 
+
+#[wasm_bindgen]
+pub fn brightness(data: &mut [u8], amount: i32) {
+    for pixel in data.chunks_exact_mut(4) {
+        for i in 0..3 {
+            // clamp() garantit qu'on reste dans 0-255 même avec un amount négatif.
+            let value = pixel[i] as i32 + amount;
+            pixel[i] = value.clamp(0, 255) as u8;
+        }
+    }
+}
+
+
+#[wasm_bindgen]
+pub fn contrast(data: &mut [u8], amount: f32) {
+    // `amount` est un facteur multiplicateur : 1.0 = aucun changement,
+    // >1.0 = plus de contraste, <1.0 = moins de contraste.
+    for pixel in data.chunks_exact_mut(4) {
+        for i in 0..3 {
+            let value = pixel[i] as f32;
+            // On centre autour de 128, on amplifie l'écart, on recentre.
+            let new_value = (value - 128.0) * amount + 128.0;
+            pixel[i] = new_value.clamp(0.0, 255.0) as u8;
+        }
+    }
+}
+
 // ---------- TESTS ----------
 #[cfg(test)]
 mod tests {
@@ -182,17 +209,18 @@ mod tests {
         assert_eq!(pixel[2], 0);
     }
 
-    #[test]
-    fn sepia_clamps_white_to_255() {
-        // Un pixel blanc pur : sans le .min(255.0), le calcul dépasserait 255.
-        let mut pixel = [255u8, 255, 255, 255];
-        sepia(&mut pixel);
+#[test]
+fn sepia_clamps_white_to_255() {
+    // Blanc pur : R et G dépassent 255 sans le .min() (1.351 et 1.203
+    // respectivement), donc plafonnent à 255. B reste sous 255 naturellement
+    // (facteur 0.937), donc pas de plafonnement nécessaire pour ce canal.
+    let mut pixel = [255u8, 255, 255, 255];
+    sepia(&mut pixel);
 
-        assert!(pixel[0] <= 255);
-        assert!(pixel[1] <= 255);
-        assert!(pixel[2] <= 255);
-    }
-
+    assert_eq!(pixel[0], 255);
+    assert_eq!(pixel[1], 255);
+    assert_eq!(pixel[2], 238);
+}
     #[test]
     fn invert_flips_each_channel() {
         let mut pixel = [0u8, 100, 255, 255];
@@ -242,4 +270,33 @@ mod tests {
 
         assert_eq!(data_naive, data_fast);
     }
+    #[test]
+fn brightness_increases_value() {
+    let mut pixel = [100u8, 100, 100, 255];
+    brightness(&mut pixel, 50);
+    assert_eq!(pixel[0], 150);
+}
+
+#[test]
+fn brightness_clamps_at_255() {
+    let mut pixel = [200u8, 200, 200, 255];
+    brightness(&mut pixel, 100); // 200+100 = 300, doit plafonner à 255
+    assert_eq!(pixel[0], 255);
+}
+
+#[test]
+fn contrast_at_one_changes_nothing() {
+    let mut pixel = [150u8, 150, 150, 255];
+    contrast(&mut pixel, 1.0);
+    assert_eq!(pixel[0], 150);
+}
+
+#[test]
+fn contrast_pushes_away_from_middle_gray() {
+    // 180 est au-dessus de 128 (gris moyen) : avec un contraste > 1,
+    // il doit s'éloigner encore plus vers 255.
+    let mut pixel = [180u8, 180, 180, 255];
+    contrast(&mut pixel, 2.0);
+    assert!(pixel[0] > 180);
+}
 }

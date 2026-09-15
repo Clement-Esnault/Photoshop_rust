@@ -6,6 +6,8 @@ import init, {
   invert,
   box_blur,
   box_blur_fast,
+  brightness,
+  contrast,
 } from '../wasm/rust_core.js'
 
 const ready = ref(false)
@@ -26,5 +28,7 @@ export function useWasm() {
     invert,
     box_blur,
     box_blur_fast,
+    brightness,
+    contrast,
   }
 }
