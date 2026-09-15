@@ -5,6 +5,7 @@
     <ImageCanvas ref="imageCanvasRef" />
 
     <FilterControls
+      :active-filter="activeFilter"
       @apply-filter="onApplyFilter"
       @apply-blur="onApplyBlur"
       @reset="onReset"
@@ -33,7 +34,7 @@ import { useBenchmark } from './composables/useBenchmark'
 import { downloadCanvas } from './composables/useImageExport'
 
 const imageCanvasRef = ref<InstanceType<typeof ImageCanvas> | null>(null)
-const { applyFilter, applyBlur } = useFilters()
+const { applyFilter, applyBlur, activeFilter, clearActiveFilter } = useFilters()
 const { benchmarkGrayscale, benchmarkBlur } = useBenchmark()
 
 const benchmarkResult = ref<{ js: number; rust: number } | null>(null)
@@ -51,6 +52,7 @@ function onApplyBlur(radius: number, fast: boolean) {
 
 function onReset() {
   imageCanvasRef.value?.reset()
+  clearActiveFilter()
 }
 
 function onBenchmark() {
