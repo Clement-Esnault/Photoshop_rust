@@ -31,6 +31,9 @@
     <button @click="$emit('benchmark')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors">
       Benchmark
     </button>
+    <button @click="$emit('benchmark-blur')" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded transition-colors">
+      Benchmark flou
+    </button>
     <button @click="$emit('download')" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors">
       Télécharger
     </button>
@@ -47,6 +50,7 @@ defineEmits<{
   'apply-blur': [radius: number, fast: boolean]
   'reset': []
   'benchmark': []
+  'benchmark-blur': []
   'download': []
 }>()
 </script>
